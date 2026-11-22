@@ -58,7 +58,8 @@ class MainActivity : ComponentActivity() {
                     onPriorityChange = { prefs.edit().putBoolean("priority_mode", it).apply() },
                     onReduceMotionChange = { prefs.edit().putBoolean("reduce_motion", it).apply() },
                     onRequestOverlay = { startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))) },
-                    onRequestNotificationAccess = { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) }
+                    onRequestNotificationAccess = { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) },
+                    onOpenControls = { startActivity(Intent(this, IslandControlPanelActivity::class.java)) }
                 )
             }
         }
@@ -81,7 +82,7 @@ class MainActivity : ComponentActivity() {
 private fun IslandScreen(
     initialEnabled: Boolean, initialPriority: Boolean, initialReduceMotion: Boolean, overlayGranted: Boolean, notificationAccessGranted: Boolean,
     onEnabledChange: (Boolean) -> Unit, onPriorityChange: (Boolean) -> Unit, onReduceMotionChange: (Boolean) -> Unit,
-    onRequestOverlay: () -> Unit, onRequestNotificationAccess: () -> Unit
+    onRequestOverlay: () -> Unit, onRequestNotificationAccess: () -> Unit, onOpenControls: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     var enabled by remember { mutableStateOf(initialEnabled) }
@@ -134,6 +135,13 @@ private fun IslandScreen(
                 Text(if (notificationAccessGranted) "Notification access is connected" else "Optional: show notification activities in Island", color = Color.White, fontSize = 13.sp)
                 Spacer(Modifier.height(12.dp))
                 Text(if (notificationAccessGranted) "MANAGE NOTIFICATION ACCESS  ›" else "GRANT NOTIFICATION ACCESS  ›", color = Mint, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.clickable(onClick = onRequestNotificationAccess))
+            }
+            Spacer(Modifier.height(16.dp))
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(Card).padding(18.dp)) {
+                Text("CONNECTIVITY & DEVICE", color = Mint, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
+                Spacer(Modifier.height(10.dp))
+                Text("Open iOS-style quick controls  ›", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.clickable(onClick = onOpenControls))
+                Spacer(Modifier.height(5.dp)); Text("Wi-Fi · Hotspot · NFC · Flashlight", color = Color(0xFF929298), fontSize = 11.sp)
             }
             Spacer(Modifier.height(16.dp))
             Text("Quick Settings tiles are available in the Android tile editor.", color = Color(0xFF74747A), fontSize = 12.sp)

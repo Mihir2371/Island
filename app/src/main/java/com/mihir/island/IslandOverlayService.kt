@@ -220,7 +220,7 @@ class IslandOverlayService : Service() {
     }
     override fun onDestroy() { timer?.cancel(); removePill(); super.onDestroy() }
     override fun onBind(intent: Intent?): IBinder? = null
-    companion {
+    companion object {
         const val ACTION_REFRESH = "com.mihir.island.REFRESH"
         const val ACTION_TIMER_START = "com.mihir.island.TIMER_START"
         const val ACTION_TIMER_STOP = "com.mihir.island.TIMER_STOP"
