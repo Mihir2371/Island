@@ -31,19 +31,26 @@ private val Card = Color(0xFF141416)
 
 class MainActivity : ComponentActivity() {
     private val prefs by lazy { getSharedPreferences("island_state", MODE_PRIVATE) }
+    private var overlayPermissionGranted by mutableStateOf(false)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        overlayPermissionGranted = Settings.canDrawOverlays(this)
         setContent {
             MaterialTheme(colorScheme = darkColorScheme(background = Ink, surface = Card, primary = Mint)) {
                 IslandScreen(
                     initialEnabled = prefs.getBoolean("island_enabled", false),
                     initialPriority = prefs.getBoolean("priority_mode", false),
                     initialReduceMotion = prefs.getBoolean("reduce_motion", false),
-                    overlayGranted = Settings.canDrawOverlays(this),
-                    onEnabledChange = { enabled ->
-                        prefs.edit().putBoolean("island_enabled", enabled).apply()
-                        if (enabled && Settings.canDrawOverlays(this)) startService(Intent(this, IslandOverlayService::class.java))
-                        else stopService(Intent(this, IslandOverlayService::class.java))
+                    overlayGranted = overlayPermissionGranted,
+                    onEnabledChange = { requested ->
+                        if (requested && !Settings.canDrawOverlays(this)) {
+                            prefs.edit().putBoolean("island_enabled", false).apply()
+                            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
+                        } else {
+                            prefs.edit().putBoolean("island_enabled", requested).apply()
+                            if (requested) startService(Intent(this, IslandOverlayService::class.java))
+                            else stopService(Intent(this, IslandOverlayService::class.java))
+                        }
                     },
                     onPriorityChange = { prefs.edit().putBoolean("priority_mode", it).apply() },
                     onReduceMotionChange = { prefs.edit().putBoolean("reduce_motion", it).apply() },
@@ -54,7 +61,8 @@ class MainActivity : ComponentActivity() {
     }
     override fun onResume() {
         super.onResume()
-        if (prefs.getBoolean("island_enabled", false) && Settings.canDrawOverlays(this)) {
+        overlayPermissionGranted = Settings.canDrawOverlays(this)
+        if (prefs.getBoolean("island_enabled", false) && overlayPermissionGranted) {
             startService(Intent(this, IslandOverlayService::class.java))
         }
     }
