@@ -32,9 +32,11 @@ private val Card = Color(0xFF141416)
 class MainActivity : ComponentActivity() {
     private val prefs by lazy { getSharedPreferences("island_state", MODE_PRIVATE) }
     private var overlayPermissionGranted by mutableStateOf(false)
+    private var notificationAccessGranted by mutableStateOf(false)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         overlayPermissionGranted = Settings.canDrawOverlays(this)
+        notificationAccessGranted = hasNotificationAccess()
         setContent {
             MaterialTheme(colorScheme = darkColorScheme(background = Ink, surface = Card, primary = Mint)) {
                 IslandScreen(
@@ -42,6 +44,7 @@ class MainActivity : ComponentActivity() {
                     initialPriority = prefs.getBoolean("priority_mode", false),
                     initialReduceMotion = prefs.getBoolean("reduce_motion", false),
                     overlayGranted = overlayPermissionGranted,
+                    notificationAccessGranted = notificationAccessGranted,
                     onEnabledChange = { requested ->
                         if (requested && !Settings.canDrawOverlays(this)) {
                             prefs.edit().putBoolean("island_enabled", false).apply()
@@ -54,7 +57,8 @@ class MainActivity : ComponentActivity() {
                     },
                     onPriorityChange = { prefs.edit().putBoolean("priority_mode", it).apply() },
                     onReduceMotionChange = { prefs.edit().putBoolean("reduce_motion", it).apply() },
-                    onRequestOverlay = { startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))) }
+                    onRequestOverlay = { startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))) },
+                    onRequestNotificationAccess = { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) }
                 )
             }
         }
@@ -62,17 +66,22 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         overlayPermissionGranted = Settings.canDrawOverlays(this)
+        notificationAccessGranted = hasNotificationAccess()
         if (prefs.getBoolean("island_enabled", false) && overlayPermissionGranted) {
             startService(Intent(this, IslandOverlayService::class.java))
         }
+    }
+    private fun hasNotificationAccess(): Boolean {
+        val enabled = android.provider.Settings.Secure.getString(contentResolver, "enabled_notification_listeners").orEmpty()
+        return enabled.contains(packageName)
     }
 }
 
 @Composable
 private fun IslandScreen(
-    initialEnabled: Boolean, initialPriority: Boolean, initialReduceMotion: Boolean, overlayGranted: Boolean,
+    initialEnabled: Boolean, initialPriority: Boolean, initialReduceMotion: Boolean, overlayGranted: Boolean, notificationAccessGranted: Boolean,
     onEnabledChange: (Boolean) -> Unit, onPriorityChange: (Boolean) -> Unit, onReduceMotionChange: (Boolean) -> Unit,
-    onRequestOverlay: () -> Unit
+    onRequestOverlay: () -> Unit, onRequestNotificationAccess: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     var enabled by remember { mutableStateOf(initialEnabled) }
@@ -117,6 +126,14 @@ private fun IslandScreen(
                 Spacer(Modifier.height(8.dp))
                 Text(if (overlayGranted) "Permission is granted" else "Allow Island to display over apps", color = Color.White, fontSize = 14.sp)
                 if (!overlayGranted) { Spacer(Modifier.height(12.dp)); Text("OPEN SETTINGS  ›", color = Mint, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.clickable(onClick=onRequestOverlay)) }
+            }
+            Spacer(Modifier.height(16.dp))
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(Card).padding(18.dp)) {
+                Text("ACTIVITY INTEGRATION", color = Mint, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
+                Spacer(Modifier.height(8.dp))
+                Text(if (notificationAccessGranted) "Notification access is connected" else "Optional: show notification activities in Island", color = Color.White, fontSize = 13.sp)
+                Spacer(Modifier.height(12.dp))
+                Text(if (notificationAccessGranted) "MANAGE NOTIFICATION ACCESS  ›" else "GRANT NOTIFICATION ACCESS  ›", color = Mint, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.clickable(onClick = onRequestNotificationAccess))
             }
             Spacer(Modifier.height(16.dp))
             Text("Quick Settings tiles are available in the Android tile editor.", color = Color(0xFF74747A), fontSize = 12.sp)
