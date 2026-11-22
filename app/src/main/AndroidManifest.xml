@@ -5,6 +5,9 @@
     <application android:allowBackup="true" android:label="Island" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:supportsRtl="true">
         <activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity>
         <service android:name=".IslandOverlayService" android:exported="false" />
+        <service android:name=".IslandNotificationListener" android:label="Island notification access" android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" android:exported="true">
+            <intent-filter><action android:name="android.service.notification.NotificationListenerService" /></intent-filter>
+        </service>
         <service android:name=".qs.IslandTileService" android:label="Island" android:icon="@drawable/ic_island_tile" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE" android:exported="true"><intent-filter><action android:name="android.service.quicksettings.action.QS_TILE"/></intent-filter></service>
         <service android:name=".qs.HideIslandTileService" android:label="Hide Island" android:icon="@drawable/ic_island_tile" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE" android:exported="true"><intent-filter><action android:name="android.service.quicksettings.action.QS_TILE"/></intent-filter></service>
         <service android:name=".qs.PriorityTileService" android:label="Priority mode" android:icon="@drawable/ic_island_tile" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE" android:exported="true"><intent-filter><action android:name="android.service.quicksettings.action.QS_TILE"/></intent-filter></service>
