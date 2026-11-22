@@ -32,14 +32,14 @@ class IslandControlPanelActivity : ComponentActivity() {
     private var torchOn by mutableStateOf(false)
     private var torchId: String? = null
     private val cameraPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) setTorch(!torchOn.value)
+        if (granted) setTorch(!torchOn)
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme(colorScheme = darkColorScheme(background = PanelBg, surface = PanelCard, primary = PanelAccent)) {
-                ControlPanel(torchOn = torchOn.value, onTorch = { toggleTorch() }, onWifi = { openWifiPanel() },
-                    onHotspot = { openSettings(Settings.ACTION_TETHER_SETTINGS, Settings.ACTION_SETTINGS) },
+                ControlPanel(torchOn = torchOn, onTorch = { toggleTorch() }, onWifi = { openWifiPanel() },
+                    onHotspot = { openSettings(Settings.ACTION_SETTINGS, Settings.ACTION_SETTINGS) },
                     onNfc = { openSettings(Settings.ACTION_NFC_SETTINGS, Settings.ACTION_SETTINGS) })
             }
         }
@@ -48,15 +48,15 @@ class IslandControlPanelActivity : ComponentActivity() {
         if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             cameraPermission.launch(Manifest.permission.CAMERA); return
         }
-        setTorch(!torchOn.value)
+        setTorch(!torchOn)
     }
     private fun setTorch(enabled: Boolean) {
         try {
             val cm = getSystemService(Context.CAMERA_SERVICE) as CameraManager
             val id = torchId ?: cm.cameraIdList.firstOrNull { cm.getCameraCharacteristics(it).get(android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE) == true }
             if (id == null) return
-            torchId = id; cm.setTorchMode(id, enabled); torchOn.value = enabled
-        } catch (_: Exception) { torchOn.value = false }
+            torchId = id; cm.setTorchMode(id, enabled); torchOn = enabled
+        } catch (_: Exception) { torchOn = false }
     }
     private fun openWifiPanel() {
         try { if (android.os.Build.VERSION.SDK_INT >= 29) startActivity(Intent(Settings.Panel.ACTION_WIFI)) else startActivity(Intent(Settings.ACTION_WIFI_SETTINGS)) }
@@ -88,7 +88,7 @@ private fun ControlPanel(torchOn: Boolean, onTorch: () -> Unit, onWifi: () -> Un
 }
 @Composable
 private fun ControlCard(icon: String, title: String, subtitle: String, active: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Column(modifier.height(142.dp).background(if (active) Color(0xFF254234) else PanelCard, RoundedCornerShape(24.dp)).clickable(onClick).padding(16.dp)) {
+    Column(modifier.height(142.dp).background(if (active) Color(0xFF254234) else PanelCard, RoundedCornerShape(24.dp)).clickable { onClick() }.padding(16.dp)) {
         Text(icon, color = if (active) PanelAccent else Color.White, fontSize = 24.sp); Spacer(Modifier.height(12.dp))
         Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold); Text(subtitle, color = Color(0xFF9B9BA2), fontSize = 11.sp)
     }
