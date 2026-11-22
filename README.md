@@ -1,28 +1,28 @@
 # Island
+Android Dynamic Island-inspired UI with iOS-like capsule motion.
 
-An Android Dynamic Island-inspired interface focused on iOS-like motion, compact activity surfaces, and cutout-aware positioning.
+## CI and APK
+GitHub Actions runs `test assembleDebug` on pushes, pull requests and manual dispatch. A debug APK is uploaded as an Actions artifact for 14 days (not published to Releases).
 
-## Current foundation
-- Kotlin + Jetpack Compose
-- Android 8.0+ (API 26)
-- Animated compact/expanded island preview
-- Dark UI baseline
-- GitHub Actions: tests and debug APK artifact on pushes, pull requests, and manual dispatch
+## Current build
+- Compose capsule demo and compact/expanded spring animation
+- Demo visibility, priority and reduce-motion controls
+- Overlay permission entry point
+- Native Quick Settings tile services for Island, Hide Island, Priority, Reduce Motion, Pause Activities, Quick Timer and Recorder. These currently persist local tile toggle state; they are not yet wired to overlay, countdown, or MediaProjection functionality.
 
-## Build locally
-Requires JDK 17 and Gradle 8.9.
-
-```bash
+## Local build
+JDK 17, Gradle 8.9:
+```sh
 gradle test
 gradle assembleDebug
 ```
+APK output: `app/build/outputs/apk/debug/app-debug.apk`
 
-The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
-
-## Roadmap
-1. Notch/cutout-aware placement and overlay architecture
-2. Refined spring morphs, gestures, interruption and reduce-motion support
-3. Activity framework with media, timers, calls, and system integrations
-4. Performance profiling and reliability testing (RAM target under 80 MB)
-
-The RAM target is a profiling goal, not a guarantee at this scaffold stage.
+## Remaining roadmap
+- Floating overlay service, shared preferences/state and notch/cutout-aware positioning
+- Cutout calibration, waterdrop/punch-hole/notch/no-cutout/foldable testing
+- Activity system, priorities and lifecycle
+- MediaSession music integration, real timers/stopwatch
+- Calls, notifications, screen recorder with MediaProjection consent
+- Navigation, rides/delivery, sports, fitness, flights, transit and transfer integrations
+- Accessibility, privacy, compatibility and performance profiling (RAM under 80 MB is a target, not measured)
