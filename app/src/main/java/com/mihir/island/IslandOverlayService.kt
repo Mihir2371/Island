@@ -56,6 +56,13 @@ class IslandOverlayService : Service() {
             background = GradientDrawable().apply { setColor(Color.BLACK); cornerRadius = dp(32).toFloat() }
             elevation = dp(12).toFloat()
             setOnTouchListener { _, event -> handleTouch(event) }
+            setOnLongClickListener {
+                if (IslandActivityContent.activeMedia != null) {
+                    IslandActivityContent.togglePlayback()
+                    refresh()
+                }
+                true
+            }
         }
         pill = label
         addPill()
@@ -143,6 +150,12 @@ class IslandOverlayService : Service() {
         if (timerEndAt > 0L && prefs.getBoolean("quick_timer_active", false)) {
             val sec = ((timerEndAt - System.currentTimeMillis()).coerceAtLeast(0L) / 1000L)
             return "◷   Quick timer\n%02d:%02d remaining".format(sec / 60, sec % 60)
+        }
+        val mediaTitle = IslandActivityContent.mediaTitle
+        if (!mediaTitle.isNullOrBlank()) {
+            val artist = IslandActivityContent.mediaArtist.orEmpty().take(50)
+            val state = if (IslandActivityContent.mediaPlaying) "Playing" else "Paused"
+            return "♫   " + mediaTitle.take(48) + "\\n" + artist + " · " + state + " · hold to play/pause"
         }
         val title = IslandActivityContent.notificationTitle
         val body = IslandActivityContent.notificationText

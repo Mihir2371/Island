@@ -26,3 +26,14 @@ APK output: `app/build/outputs/apk/debug/app-debug.apk`
 - Calls, notifications, screen recorder with MediaProjection consent
 - Navigation, rides/delivery, sports, fitness, flights, transit and transfer integrations
 - Accessibility, privacy, compatibility and performance profiling (RAM under 80 MB is a target, not measured)
+
+
+## Functional foundation added
+- Draggable overlay and animated expansion/collapse.
+- Quick Timer Quick Settings tile (5-minute countdown).
+- Optional Notification Listener integration displaying latest notification.
+- Media metadata adapter and long-press play/pause through active MediaSession.
+- Reduce Motion preference, Android 14 foreground-service subtype, activity registry and local customization preferences.
+
+## Not yet implemented
+Dedicated media controls, per-app integrations, incoming/ongoing call UI, navigation adapters, recorder flow, multiple activity presentation, cutout calibration, and RAM profiling still require implementation/testing.
