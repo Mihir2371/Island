@@ -144,6 +144,13 @@ class IslandOverlayService : Service() {
             val sec = ((timerEndAt - System.currentTimeMillis()).coerceAtLeast(0L) / 1000L)
             return "◷   Quick timer\n%02d:%02d remaining".format(sec / 60, sec % 60)
         }
+        val title = IslandActivityContent.notificationTitle
+        val body = IslandActivityContent.notificationText
+        if (!title.isNullOrBlank()) {
+            val cleanTitle = title.take(42)
+            val cleanBody = body?.take(72).orEmpty()
+            return if (cleanBody.isNotBlank()) "✦   $cleanTitle\n$cleanBody" else "✦   $cleanTitle\nTap to collapse"
+        }
         return "♫   Island activity\nTap to collapse"
     }
     private fun startQuickTimer(durationMs: Long = prefs.getLong("timer_remaining_ms", 300_000L)) {
