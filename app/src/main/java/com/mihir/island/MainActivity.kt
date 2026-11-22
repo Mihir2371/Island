@@ -71,7 +71,7 @@ private fun IslandScreen(overlayGranted: Boolean, onRequestOverlay: () -> Unit) 
                             Box(Modifier.size(7.dp).clip(RoundedCornerShape(50)).background(Mint))
                             Text("ISLAND", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.1.sp)
                             Row(verticalAlignment = Alignment.Bottom) {
-                                listOf(7.dp, 12.dp, 5.dp).forEach { bar -> Box(Modifier.padding(horizontal = 1.dp).width(3.dp).height(bar).clip(RoundedCornerShape(2.dp)).background(Mint) }
+                                listOf(7.dp, 12.dp, 5.dp).forEach { bar -> Box(Modifier.padding(horizontal = 1.dp).width(3.dp).height(bar).clip(RoundedCornerShape(2.dp)).background(Mint)) }
                             }
                         }
                     }
