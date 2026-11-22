@@ -97,7 +97,7 @@ class IslandOverlayService : Service() {
                 if (dragged) {
                     lp.x = initialX - dx
                     lp.y = maxOf(dp(4), initialY + dy)
-                    try { manager.updateViewLayout(pill, lp) } catch (_: Exception) {}
+                    try { manager.updateViewLayout(view, lp) } catch (_: Exception) {}
                 }
                 return true
             }
