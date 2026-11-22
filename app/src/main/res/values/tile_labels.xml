@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tile_island">Island</string>
+    <string name="tile_hide_island">Hide Island</string>
+    <string name="tile_priority_mode">Priority Mode</string>
+    <string name="tile_reduce_motion">Reduce Motion</string>
+    <string name="tile_recorder">Recorder</string>
+    <string name="tile_quick_timer">Quick Timer</string>
+    <string name="tile_pause_activities">Pause Activities</string>
+</resources>
