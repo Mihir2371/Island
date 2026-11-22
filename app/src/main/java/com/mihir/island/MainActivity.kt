@@ -30,93 +30,98 @@ private val Ink = Color(0xFF050506)
 private val Card = Color(0xFF141416)
 
 class MainActivity : ComponentActivity() {
+    private val prefs by lazy { getSharedPreferences("island_state", MODE_PRIVATE) }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme(colorScheme = darkColorScheme(background = Ink, surface = Card, primary = Mint)) {
-                IslandScreen(Settings.canDrawOverlays(this)) {
-                    startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
-                }
+                IslandScreen(
+                    initialEnabled = prefs.getBoolean("island_enabled", false),
+                    initialPriority = prefs.getBoolean("priority_mode", false),
+                    initialReduceMotion = prefs.getBoolean("reduce_motion", false),
+                    overlayGranted = Settings.canDrawOverlays(this),
+                    onEnabledChange = { enabled ->
+                        prefs.edit().putBoolean("island_enabled", enabled).apply()
+                        if (enabled && Settings.canDrawOverlays(this)) startService(Intent(this, IslandOverlayService::class.java))
+                        else stopService(Intent(this, IslandOverlayService::class.java))
+                    },
+                    onPriorityChange = { prefs.edit().putBoolean("priority_mode", it).apply() },
+                    onReduceMotionChange = { prefs.edit().putBoolean("reduce_motion", it).apply() },
+                    onRequestOverlay = { startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))) }
+                )
             }
+        }
+    }
+    override fun onResume() {
+        super.onResume()
+        if (prefs.getBoolean("island_enabled", false) && Settings.canDrawOverlays(this)) {
+            startService(Intent(this, IslandOverlayService::class.java))
         }
     }
 }
 
 @Composable
-private fun IslandScreen(overlayGranted: Boolean, onRequestOverlay: () -> Unit) {
+private fun IslandScreen(
+    initialEnabled: Boolean, initialPriority: Boolean, initialReduceMotion: Boolean, overlayGranted: Boolean,
+    onEnabledChange: (Boolean) -> Unit, onPriorityChange: (Boolean) -> Unit, onReduceMotionChange: (Boolean) -> Unit,
+    onRequestOverlay: () -> Unit
+) {
     var expanded by remember { mutableStateOf(false) }
-    var enabled by remember { mutableStateOf(true) }
-    var reduceMotion by remember { mutableStateOf(false) }
-    var priority by remember { mutableStateOf(false) }
-    val width by animateDpAsState(if (expanded) 328.dp else 180.dp, spring(stiffness = Spring.StiffnessLow, dampingRatio = Spring.DampingRatioMediumBouncy), label = "width")
-    val height by animateDpAsState(if (expanded) 116.dp else 46.dp, spring(stiffness = Spring.StiffnessLow, dampingRatio = Spring.DampingRatioMediumBouncy), label = "height")
+    var enabled by remember { mutableStateOf(initialEnabled) }
+    var reduceMotion by remember { mutableStateOf(initialReduceMotion) }
+    var priority by remember { mutableStateOf(initialPriority) }
+    LaunchedEffect(initialEnabled) { enabled = initialEnabled }
+    LaunchedEffect(initialPriority) { priority = initialPriority }
+    LaunchedEffect(initialReduceMotion) { reduceMotion = initialReduceMotion }
+    val width by animateDpAsState(if (expanded) 320.dp else 180.dp, if (reduceMotion) androidx.compose.animation.core.snap() else spring(stiffness = Spring.StiffnessLow, dampingRatio = Spring.DampingRatioMediumBouncy), label = "pillWidth")
+    val height by animateDpAsState(if (expanded) 116.dp else 46.dp, if (reduceMotion) androidx.compose.animation.core.snap() else spring(stiffness = Spring.StiffnessLow, dampingRatio = Spring.DampingRatioMediumBouncy), label = "pillHeight")
     Box(Modifier.fillMaxSize().background(Ink)) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 22.dp).align(Alignment.TopCenter), horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(Modifier.height(14.dp))
             if (enabled) {
-                Box(Modifier.width(width).height(height).clip(RoundedCornerShape(32.dp)).background(Color.Black)
-                    .clickable { expanded = !expanded }.padding(horizontal = 14.dp, vertical = 8.dp), contentAlignment = Alignment.Center) {
-                    if (expanded) {
-                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            Box(Modifier.size(36.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF28282C)), contentAlignment = Alignment.Center) { Text("♫", color = Mint, fontSize = 20.sp) }
-                            Spacer(Modifier.width(10.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text("Island Activity", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                                Text("Tap to collapse", color = Color.Gray, fontSize = 11.sp)
-                            }
-                            Text("Ⅱ  ›", color = Color.White, fontSize = 15.sp)
-                        }
-                    } else {
-                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                            Box(Modifier.size(7.dp).clip(RoundedCornerShape(50)).background(Mint))
-                            Text("ISLAND", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.1.sp)
-                            Row(verticalAlignment = Alignment.Bottom) {
-                                listOf(7.dp, 12.dp, 5.dp).forEach { bar -> Box(Modifier.padding(horizontal = 1.dp).width(3.dp).height(bar).clip(RoundedCornerShape(2.dp)).background(Mint)) }
-                            }
-                        }
+                Box(Modifier.width(width).height(height).clip(RoundedCornerShape(32.dp)).background(Color.Black).clickable { expanded = !expanded }.padding(14.dp), contentAlignment = Alignment.Center) {
+                    if (expanded) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(36.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF28282C)), contentAlignment = Alignment.Center) { Text("♫", color = Mint, fontSize = 20.sp) }
+                        Spacer(Modifier.width(10.dp))
+                        Column(Modifier.weight(1f)) { Text("Island is running", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp); Text("Overlay preview · tap to collapse", color = Color.Gray, fontSize = 11.sp) }
+                        Text("Ⅱ  ›", color = Color.White, fontSize = 15.sp)
+                    } else Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Box(Modifier.size(7.dp).clip(RoundedCornerShape(50)).background(Mint))
+                        Text("ISLAND", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.1.sp)
+                        Row(verticalAlignment = Alignment.Bottom) { listOf(7.dp,12.dp,5.dp).forEach { bar -> Box(Modifier.padding(horizontal=1.dp).width(3.dp).height(bar).clip(RoundedCornerShape(2.dp)).background(Mint)) } }
                     }
                 }
-            } else {
-                Spacer(Modifier.height(46.dp)); Text("Island is hidden", color = Color.Gray, fontSize = 12.sp)
-            }
+            } else Spacer(Modifier.height(46.dp))
             Spacer(Modifier.height(38.dp))
             Text("ISLAND", color = Color.White, fontSize = 31.sp, fontWeight = FontWeight.Black, letterSpacing = 5.sp)
             Spacer(Modifier.height(7.dp)); Text("A living interface for Android", color = Color(0xFF96969B), fontSize = 14.sp)
             Spacer(Modifier.height(30.dp))
             Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(Card).padding(18.dp)) {
-                Text("QUICK CONTROLS", color = Mint, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
+                Text("ISLAND CONTROLS", color = Mint, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
                 Spacer(Modifier.height(14.dp))
-                SettingRow("Island enabled", "Show or hide the demo pill", enabled) { enabled = it }
-                SettingRow("Priority mode", "Prioritize the active activity", priority) { priority = it }
-                SettingRow("Reduce motion", "Use less animated transitions", reduceMotion) { reduceMotion = it }
+                SettingRow("Floating Island", "Show the capsule over other apps", enabled) { enabled=it; onEnabledChange(it) }
+                SettingRow("Priority mode", "Prioritize the latest activity", priority) { priority=it; onPriorityChange(it) }
+                SettingRow("Reduce motion", "Disable spring animation", reduceMotion) { reduceMotion=it; onReduceMotionChange(it) }
             }
             Spacer(Modifier.height(16.dp))
             Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(Card).padding(18.dp)) {
-                Text("OVERLAY PERMISSION", color = Mint, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
+                Text("OVERLAY ACCESS", color = Mint, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
                 Spacer(Modifier.height(8.dp))
-                Text(if (overlayGranted) "Permission granted" else "Needed for floating Island", color = Color.White, fontSize = 14.sp)
-                Spacer(Modifier.height(12.dp))
-                Text("Overlay service is a follow-up implementation step; this permission screen is ready.", color = Color(0xFF9D9DA3), fontSize = 12.sp, lineHeight = 17.sp)
-                if (!overlayGranted) {
-                    Spacer(Modifier.height(12.dp))
-                    Text("OPEN PERMISSION SETTINGS  ›", color = Mint, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.clickable(onClick = onRequestOverlay))
-                }
+                Text(if (overlayGranted) "Permission is granted" else "Allow Island to display over apps", color = Color.White, fontSize = 14.sp)
+                if (!overlayGranted) { Spacer(Modifier.height(12.dp)); Text("OPEN SETTINGS  ›", color = Mint, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.clickable(onClick=onRequestOverlay)) }
             }
             Spacer(Modifier.height(16.dp))
-            Text("Tap the island to expand or collapse.", color = Color(0xFF74747A), fontSize = 12.sp)
+            Text("Quick Settings tiles are available in the Android tile editor.", color = Color(0xFF74747A), fontSize = 12.sp)
         }
     }
 }
 
 @Composable
 private fun SettingRow(title: String, subtitle: String, value: Boolean, onChange: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-            Text(subtitle, color = Color(0xFF929298), fontSize = 11.sp)
-        }
-        Box(Modifier.width(48.dp).height(28.dp).clip(RoundedCornerShape(18.dp)).background(if (value) Mint else Color(0xFF343438)).clickable { onChange(!value) }.padding(3.dp), contentAlignment = if (value) Alignment.CenterEnd else Alignment.CenterStart) {
-            Box(Modifier.size(22.dp).clip(RoundedCornerShape(50)).background(if (value) Color(0xFF101012) else Color.White))
+    Row(Modifier.fillMaxWidth().padding(vertical=7.dp), verticalAlignment=Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) { Text(title,color=Color.White,fontSize=14.sp,fontWeight=FontWeight.Medium); Text(subtitle,color=Color(0xFF929298),fontSize=11.sp) }
+        Box(Modifier.width(48.dp).height(28.dp).clip(RoundedCornerShape(18.dp)).background(if(value) Mint else Color(0xFF343438)).clickable { onChange(!value) }.padding(3.dp), contentAlignment=if(value) Alignment.CenterEnd else Alignment.CenterStart) {
+            Box(Modifier.size(22.dp).clip(RoundedCornerShape(50)).background(if(value) Color(0xFF101012) else Color.White))
         }
     }
 }
