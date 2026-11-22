@@ -15,6 +15,7 @@ abstract class IslandToggleTile(private val prefKey:String,private val tileLabel
         prefs.edit().putBoolean(prefKey,value).apply()
         when(prefKey){
             "island_enabled" -> if(value && Settings.canDrawOverlays(this)) startService(Intent(this,IslandOverlayService::class.java)) else stopService(Intent(this,IslandOverlayService::class.java))
+            "quick_timer_active" -> startService(Intent(this,IslandOverlayService::class.java).setAction(if(value) IslandOverlayService.ACTION_TIMER_START else IslandOverlayService.ACTION_TIMER_STOP))
             "island_hidden","priority_mode","reduce_motion","activities_paused" -> startService(Intent(this,IslandOverlayService::class.java).setAction(IslandOverlayService.ACTION_REFRESH))
             // Timer and recorder tiles deliberately remain request flags until their consent/activity flows are added.
         }
