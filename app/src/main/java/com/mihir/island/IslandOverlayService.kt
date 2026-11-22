@@ -45,7 +45,7 @@ class IslandOverlayService : Service() {
 
     private fun refresh() {
         removePill()
-        if (!prefs.getBoolean("island_enabled", false) || prefs.getBoolean("island_hidden", false)) return
+        if ((!prefs.getBoolean("island_enabled", false) && !prefs.getBoolean("quick_timer_active", false)) || prefs.getBoolean("island_hidden", false)) return
         expanded = false
         val label = TextView(this).apply {
             text = timerLabel()
